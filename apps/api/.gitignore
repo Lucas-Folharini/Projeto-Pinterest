@@ -1,0 +1,11 @@
+
+/dist
+
+/coverage
+
+/generated/prisma
+*.db
+*.db-journal
+
+*.pem
+*.key
