@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// ENTIDADES PRINCIPAIS
+// ==========================================
+
+model User {
+  id         String   @id @default(uuid())
+  userName   String   @map("user_name")
+  email      String   @unique
+  password   String   
+  birthDate  DateTime @map("birth_date") @db.Date // Salva apenas a data, sem a hora
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  posts      Post[]
+  folders    Folder[]
+
+  followers  Follow[] @relation("UserFollowers")
+  following  Follow[] @relation("UserFollowing")
+  likedPosts PostLike[]
+
+  @@map("users")
+}
+
+model Post {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  description String?  @db.Text
+  urlImage    String   @map("url_image")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  author      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  likes       PostLike[]
+  folders     FolderPost[]
+
+  @@map("posts")
+}
+
+model Folder {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  owner       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  posts       FolderPost[]
+
+  @@map("folders")
+}
+
+// ==========================================
+// PIVOT TABLES
+// ==========================================
+
+model Follow {
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+model PostLike {
+  userId      String   @map("user_id")
+  postId      String   @map("post_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@map("post_likes")
+}
+
+model FolderPost {
+  folderId    String   @map("folder_id")
+  postId      String   @map("post_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  folder      Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([folderId, postId])
+  @@map("folder_posts")
+}
